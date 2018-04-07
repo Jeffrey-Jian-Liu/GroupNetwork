@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         if (!isLibrary.toBoolean()) {
-            applicationId "com.liubase.groupnetwork"
+            applicationId "com.liubase.groups"
         }
 
         minSdkVersion 25
@@ -24,6 +24,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        archivesBaseName = "GroupNetwork"
     }
     buildTypes {
         release {
@@ -44,14 +45,15 @@ android {
 
 ext {
     com_android_version = '27.1.0'
-    com_google_version = '12.0.0'
+    com_google_version = '12.0.1'
 }
 
 dependencies {
-    implementation "com.liubase.groups:GroupMain:1.0.8"
+    implementation "com.liubase.groups:GroupMain:1.0.11"
 
     //com.android libs
     //support libraries
+    implementation "com.android.support:support-v4:$com_android_version"
     implementation "com.android.support:appcompat-v7:$com_android_version"
     implementation "com.android.support:support-fragment:$com_android_version"
 
@@ -65,4 +67,103 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}
+
+apply plugin: 'com.google.gms.google-services'
+
+// Upload to JCenter
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+def siteUrl ='https://github.com/jeffreyliu888/GroupNetwork'
+def gitUrl ='https://github.com/jeffreyliu888/GroupNetwork.git'
+
+group = "com.liubase.groups"
+version = "1.0.2"
+def libName = "GroupNetwork"
+
+task sourcesJar(type: Jar) {
+    archiveName = libName+"-"+version+"-sources.jar"
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+dokka {
+    outputFormat = 'html'
+    outputDirectory = "$buildDir/javadoc"
+}
+
+task dokkaJavadoc(type: org.jetbrains.dokka.gradle.DokkaTask, dependsOn: sourcesJar) {
+    outputFormat = "javadoc"
+    outputDirectory = "$buildDir/docs/javadoc"
+}
+
+task javadoc(type: Javadoc, dependsOn: dokkaJavadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    options.encoding "UTF-8"
+    options.charSet 'UTF-8'
+    options.author true
+    options.version true
+    options.links "https://github.com/jeffreyliu888/GroupNetwork"
+    failOnError false
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveName = libName+"-"+version+"-javadoc.jar"
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+install {
+    repositories.mavenInstaller {
+
+        pom {
+            project {
+                packaging 'aar'
+                name 'Groups Series - GroupNetwork Lib'
+                artifactId 'GroupNetwork'
+                url siteUrl
+                licenses {
+                    license {
+                        name 'Groups Series - GroupNetwork Lib'
+                        url 'https://github.com/jeffreyliu888/GroupNetwork'
+                    }
+                }
+                developers {
+                    developer {
+                        id 'jeffreyliu888'
+                        name 'Jeffrey Liu'
+                        email 'jeffrey.jian.liu@hotmail.com'
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+    configurations = ['archives']
+    pkg {
+        repo = "Groups"
+        name = libName
+        desc = 'Groups Series - GroupNetwork Lib'
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["GPL-3.0"]
+        publish = true
+    }
 }
